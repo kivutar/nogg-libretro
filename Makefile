@@ -16,7 +16,7 @@ else ifneq ($(findstring win,$(shell uname -a)),)
 endif
 endif
 
-TARGET_NAME := test
+TARGET_NAME := obake
 
 fpic=
 ifeq ($(platform), unix)
@@ -60,10 +60,10 @@ else
    CFLAGS += -O3
 endif
 
-OBJECTS := libretro.o
+OBJECTS := rpng.o libretro.o
 CFLAGS += -Wall -pedantic $(fpic) $(PLATFORM_DEFINES)
 
-CFLAGS += 
+CFLAGS +=
 LFLAGS := 
 LIBS := -lm
 
@@ -84,7 +84,7 @@ $(TARGET): $(OBJECTS)
 ifeq ($(STATIC_LINKING), 1)
 	$(AR) rcs $@ $(OBJECTS)
 else
-	$(CC) $(fpic) $(SHARED) $(INCLUDES) $(LFLAGS) -o $@ $(OBJECTS) $(LIBS)
+	$(CC) $(fpic) $(SHARED) $(INCLUDES) $(LFLAGS) -o $@ $(OBJECTS) $(LIBS) -lz
 endif
 
 %.o: %.c
@@ -93,8 +93,10 @@ endif
 clean:
 	rm -f $(OBJECTS) $(TARGET)
 
-install:
-	cp test_libretro.so /usr/lib/libretro/
+install: all
+	install -m755 $(TARGET) /usr/lib/libretro/
+	install -d -m755 /usr/share/obake
+	cp -r assets/* /usr/share/obake
 
 .PHONY: clean
 

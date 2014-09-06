@@ -1,5 +1,7 @@
 #include "libretro.h"
 
+#include "rpng.h"
+
 #include <stdint.h>
 #include <string.h>
 #include <math.h>
@@ -7,6 +9,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <errno.h>
+#include <stdbool.h>
 
 #define SCREEN_WIDTH 320
 #define SCREEN_HEIGHT 240
@@ -24,6 +27,19 @@ static retro_input_state_t input_state_cb;
 
 typedef struct
 {
+   int   w;
+   int   h;
+   float x;
+   float y;
+   float v;
+   float f;
+   float t;
+   bool  d;
+   uint32_t *image;
+} entity_t;
+
+typedef struct
+{
    int up;
    int down;
    int left;
@@ -33,6 +49,15 @@ typedef struct
 } key_state_t;
 
 float frame_time = 0;
+
+uint32_t *img_obake_left = NULL;
+uint32_t *img_obake_right = NULL;
+uint32_t *img_blueflame = NULL;
+
+entity_t obake;
+entity_t flame1;
+entity_t flame2;
+entity_t flame3;
 
 void retro_init(void)
 {
@@ -56,7 +81,7 @@ void retro_set_controller_port_device(unsigned port, unsigned device)
 void retro_get_system_info(struct retro_system_info *info)
 {
    memset(info, 0, sizeof(*info));
-   info->library_name     = "Test";
+   info->library_name     = "Obake";
    info->library_version  = "v1.0";
    info->need_fullpath    = true;
    info->valid_extensions = NULL;
@@ -80,6 +105,10 @@ void retro_set_environment(retro_environment_t cb)
 
    int no_rom = true;
    cb(RETRO_ENVIRONMENT_SET_SUPPORT_NO_GAME, &no_rom);
+
+   struct retro_log_callback logging;
+   if (cb(RETRO_ENVIRONMENT_GET_LOG_INTERFACE, &logging))
+      log_cb = logging.log;
 }
 
 void retro_set_audio_sample(retro_audio_sample_t cb)
@@ -116,31 +145,33 @@ static void frame_time_cb(retro_usec_t usec)
    frame_time = usec / 1000000.0;
 }
 
-void fill_rect(int x, int y, int w, int h, uint32_t c)
+void draw_rect(int x, int y, int w, int h, uint32_t c)
 {
-   /*if (x < 0) {
-      w += x;
-      x = 0;
-   }
-   if (y < 0) {
-      h += y;
-      y = 0;
-   }
-   if (x+w > SCREEN_WIDTH) {
-      w -= SCREEN_WIDTH - (x+w);
-   }
-   if (y+h > SCREEN_HEIGHT) {
-      h -= SCREEN_HEIGHT - (y+h);
-   }*/
-
    int i, j;
    for (j = y; j < y+h; j++)
       for (i = x; i < x+w; i++)
          fb[j * (fbpitch >> 1) + i] = c;
 }
 
-float x, y;
-float v = 1.0;
+void draw_image(int x, int y, int w, int h, uint32_t *data)
+{
+   int i, j, ii, jj;
+   for (j = y; j < y+h; j++) {
+      jj++;
+      ii = 0;
+      if (j >= 0 && j < SCREEN_HEIGHT) {
+         for (i = x; i < x+w; i++) {
+            ii++;
+            int imgpitch = w * sizeof(uint16_t);
+            uint32_t c = data[jj * (imgpitch >> 1) + ii];
+            if (i >= 0 && i < SCREEN_WIDTH) {
+               if (0xff000000 & c)
+                  fb[j * (fbpitch >> 1) + i] = c;
+            }
+         }
+      }
+   }
+}
 
 void retro_run(void)
 {
@@ -155,14 +186,29 @@ void retro_run(void)
    ks.start  = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_START);
    ks.select = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT);
 
-   if (ks.up)    { y -= v; }
-   if (ks.down)  { y += v; }
-   if (ks.left)  { x -= v; }
-   if (ks.right) { x += v; }
+   if (ks.up)    { obake.y -= obake.v; }
+   if (ks.down)  { obake.y += obake.v; }
+   if (ks.left)  { obake.x -= obake.v; obake.d = false; }
+   if (ks.right) { obake.x += obake.v; obake.d = true;  }
 
-   fill_rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0xff000000);
+   draw_rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0xff000000);
 
-   fill_rect((int)x, (int)y, 10, 10, 0xffff0000);
+   obake.t += 0.05;
+   obake.f = cos(obake.t)*3;
+   obake.image = obake.d ? img_obake_right : img_obake_left;
+   draw_image((int)obake.x, (int)obake.y + (int)obake.f, obake.w, obake.h, obake.image);
+
+   flame1.x = obake.x + obake.w/2 - flame1.w/2 + cos(obake.t)*30;
+   flame1.y = obake.y + obake.h/2 - flame1.w/2 + sin(obake.t)*30 + obake.f;
+   draw_image((int)flame1.x, (int)flame1.y + (int)flame1.f, flame1.w, flame1.h, flame1.image);
+
+   flame2.x = obake.x + obake.w/2 - flame2.w/2 + cos(obake.t+1)*30;
+   flame2.y = obake.y + obake.h/2 - flame2.w/2 + sin(obake.t+1)*30 + obake.f;
+   draw_image((int)flame2.x, (int)flame2.y + (int)flame2.f, flame2.w, flame2.h, flame2.image);
+
+   flame3.x = obake.x + obake.w/2 - flame3.w/2 + cos(obake.t+2)*30;
+   flame3.y = obake.y + obake.h/2 - flame3.w/2 + sin(obake.t+2)*30 + obake.f;
+   draw_image((int)flame3.x, (int)flame3.y + (int)flame3.f, flame3.w, flame3.h, flame3.image);
 
    video_cb(fb, SCREEN_WIDTH, SCREEN_HEIGHT, fbpitch*2);
 }
@@ -176,6 +222,30 @@ bool retro_load_game(const struct retro_game_info *info)
    struct retro_frame_time_callback frame_cb = { frame_time_cb, 1000000 / 60 };
    frame_cb.callback(frame_cb.reference);
    environ_cb(RETRO_ENVIRONMENT_SET_FRAME_TIME_CALLBACK, &frame_cb);
+
+   unsigned width = 0, height = 0;
+   rpng_load_image_argb("/usr/share/obake/obake_left.png", &img_obake_left, &width, &height);
+   rpng_load_image_argb("/usr/share/obake/obake_right.png", &img_obake_right, &width, &height);
+   rpng_load_image_argb("/usr/share/obake/blueflame.png", &img_blueflame, &width, &height);
+
+   obake.w = 48;
+   obake.h = 46;
+   obake.x = SCREEN_WIDTH/2  - obake.w/2;
+   obake.y = SCREEN_HEIGHT/2 - obake.h/2;
+   obake.v = 1.0;
+   obake.image = img_obake_left;
+
+   flame1.w = 16;
+   flame1.h = 14;
+   flame1.image = img_blueflame;
+
+   flame2.w = 16;
+   flame2.h = 14;
+   flame2.image = img_blueflame;
+
+   flame3.w = 16;
+   flame3.h = 14;
+   flame3.image = img_blueflame;
 
    (void)info;
    return true;
