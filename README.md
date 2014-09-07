@@ -3,4 +3,4 @@ libretro-experiment
 
     make
     sudo make install
-    retroarch -L /usr/lib/libretro/obake-libretro.so
+    retroarch -L /usr/lib/libretro/obake_libretro.so
