@@ -60,7 +60,7 @@ else
    CFLAGS += -O3
 endif
 
-OBJECTS := rpng.o libretro.o
+OBJECTS := rpng.o json.o libretro.o
 CFLAGS += -Wall -pedantic $(fpic) $(PLATFORM_DEFINES)
 
 CFLAGS +=

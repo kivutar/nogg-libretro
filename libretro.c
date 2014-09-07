@@ -1,6 +1,7 @@
 #include "libretro.h"
 
 #include "rpng.h"
+#include "json.h"
 
 #include <stdint.h>
 #include <string.h>
@@ -53,6 +54,7 @@ float frame_time = 0;
 uint32_t *img_obake_left = NULL;
 uint32_t *img_obake_right = NULL;
 uint32_t *img_blueflame = NULL;
+uint32_t *img_forestground = NULL;
 
 entity_t obake;
 entity_t flame1;
@@ -155,7 +157,7 @@ void draw_rect(int x, int y, int w, int h, uint32_t c)
 
 void draw_image(int x, int y, int w, int h, uint32_t *data)
 {
-   int i, j, ii, jj;
+   int i, j, ii, jj = 0;
    for (j = y; j < y+h; j++) {
       jj++;
       ii = 0;
@@ -164,6 +166,29 @@ void draw_image(int x, int y, int w, int h, uint32_t *data)
             ii++;
             int imgpitch = w * sizeof(uint16_t);
             uint32_t c = data[jj * (imgpitch >> 1) + ii];
+            if (i >= 0 && i < SCREEN_WIDTH) {
+               if (0xff000000 & c)
+                  fb[j * (fbpitch >> 1) + i] = c;
+            }
+         }
+      }
+   }
+}
+
+void draw_tile(int x, int y, int w, int h, uint32_t *data, int id)
+{
+   int Y = (id / 23) * 16;
+   int X = (id % 23) * 16;
+
+   int i, j, ii, jj = 0;
+   for (j = y; j < y+h; j++) {
+      jj++;
+      ii = 0;
+      if (j >= 0 && j < SCREEN_HEIGHT) {
+         for (i = x; i < x+w; i++) {
+            ii++;
+            int imgpitch = 386 * sizeof(uint16_t);
+            uint32_t c = data[Y * (imgpitch >> 1) + X];
             if (i >= 0 && i < SCREEN_WIDTH) {
                if (0xff000000 & c)
                   fb[j * (fbpitch >> 1) + i] = c;
@@ -210,6 +235,40 @@ void retro_run(void)
    flame3.y = obake.y + obake.h/2 - flame3.w/2 + sin(obake.t+2)*30 + obake.f;
    draw_image((int)flame3.x, (int)flame3.y + (int)flame3.f, flame3.w, flame3.h, flame3.image);
 
+   char jsonstring[4096*2];
+   FILE *fp = fopen("/usr/share/obake/test.json", "rb");
+   if (fp)
+   {
+      fread(jsonstring, sizeof(char), sizeof(jsonstring)-1, fp);
+      fclose(fp);
+   }
+
+   json_value data = * json_parse(jsonstring, strlen(jsonstring));
+
+   int i, j, k;
+   for(i = 0; i < data.u.object.length; i++) {
+      if (!strcmp(data.u.object.values[i].name, "layers")) {
+         json_value *layers = data.u.object.values[i].value;
+         for(j = 0; j < layers->u.array.length; j++) {
+            json_value *layer = layers->u.array.values[0];
+            for(k = 0; k < layer->u.object.length; k++) {
+               if (!strcmp(layer->u.object.values[k].name, "data")) {
+                  json_value *layerdata = layer->u.object.values[k].value;
+
+                  int x, y;
+                  for (y = 0; y < 15; y++) {
+                     for (x = 0; x < 20; x++) {
+                        draw_tile(x*16, y*16, 16, 16, img_forestground, 
+                           layerdata->u.array.values[y*20+x]->u.integer);
+                     }
+                  }
+
+               }
+            }
+         }
+      }
+   }
+
    video_cb(fb, SCREEN_WIDTH, SCREEN_HEIGHT, fbpitch*2);
 }
 
@@ -227,6 +286,7 @@ bool retro_load_game(const struct retro_game_info *info)
    rpng_load_image_argb("/usr/share/obake/obake_left.png", &img_obake_left, &width, &height);
    rpng_load_image_argb("/usr/share/obake/obake_right.png", &img_obake_right, &width, &height);
    rpng_load_image_argb("/usr/share/obake/blueflame.png", &img_blueflame, &width, &height);
+   rpng_load_image_argb("/usr/share/obake/forestground.png", &img_forestground, &width, &height);
 
    obake.w = 48;
    obake.h = 46;
