@@ -12,7 +12,6 @@
 #include "libretro.h"
 #include "rpng.h"
 #include "json.h"
-#include "obake.h"
 
 #define SCREEN_WIDTH 320
 #define SCREEN_HEIGHT 240
@@ -52,11 +51,6 @@ typedef struct
    int select;
 } key_state_t;
 
-entity_t obake;
-entity_t flame1;
-entity_t flame2;
-entity_t flame3;
-
 key_state_t ks;
 
 uint32_t *img_blueflame;
@@ -69,6 +63,10 @@ void draw_image(int x, int y, int w, int h, uint32_t *data);
 void draw_tile(int dest_x, int dest_y, int w, int h, int total_w, int total_h, uint32_t *data, int id);
 void render_game();
 void load_game();
+
+entity_t map_new();
+entity_t obake_new();
+entity_t flame_new(entity_t *center);
 
 uint32_t fb[SCREEN_WIDTH * SCREEN_HEIGHT * 2];
 size_t fbpitch;

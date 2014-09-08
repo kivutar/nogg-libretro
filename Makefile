@@ -60,7 +60,7 @@ else
    CFLAGS += -O3
 endif
 
-OBJECTS := obake.o game.o rpng.o json.o libretro.o
+OBJECTS := map.o flame.o obake.o game.o rpng.o json.o libretro.o
 CFLAGS += -Wall -pedantic $(fpic) $(PLATFORM_DEFINES)
 
 CFLAGS +=

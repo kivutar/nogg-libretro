@@ -1,4 +1,4 @@
-#include "obake.h"
+#include "game.h"
 
 static uint32_t *img_obake_left;
 static uint32_t *img_obake_right;
@@ -20,18 +20,22 @@ static void draw(entity_t *self)
    draw_image((int)self->x, (int)self->y + (int)self->f, self->w, self->h, self->image);
 }
 
-void obake_new()
+entity_t obake_new()
 {
-	unsigned width, height = 0;
+   unsigned width, height = 0;
    rpng_load_image_argb("/usr/share/obake/obake_left.png", &img_obake_left, &width, &height);
    rpng_load_image_argb("/usr/share/obake/obake_right.png", &img_obake_right, &width, &height);
 
-   obake.w = 48;
-   obake.h = 48;
-   obake.x = SCREEN_WIDTH/2  - obake.w/2;
-   obake.y = SCREEN_HEIGHT/2 - obake.h/2;
-   obake.v = 1.0;
-   obake.image = img_obake_left;
-   obake.update = &update;
-   obake.draw = &draw;
+   entity_t self;
+
+   self.w = 48;
+   self.h = 48;
+   self.x = SCREEN_WIDTH/2  - self.w/2;
+   self.y = SCREEN_HEIGHT/2 - self.h/2;
+   self.v = 1.0;
+   self.image = img_obake_left;
+   self.update = &update;
+   self.draw = &draw;
+
+   return self;
 }
