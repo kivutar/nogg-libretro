@@ -3,6 +3,15 @@
 
 float frame_time = 0;
 
+static void fallback_log(enum retro_log_level level, const char *fmt, ...)
+{
+   (void)level;
+   va_list va;
+   va_start(va, fmt);
+   vfprintf(stderr, fmt, va);
+   va_end(va);
+}
+
 void retro_init(void)
 {
    fbpitch = SCREEN_WIDTH * sizeof(uint32_t);
@@ -54,6 +63,8 @@ void retro_set_environment(retro_environment_t cb)
    struct retro_log_callback logging;
    if (cb(RETRO_ENVIRONMENT_GET_LOG_INTERFACE, &logging))
       log_cb = logging.log;
+   else
+      log_cb = fallback_log;
 }
 
 void retro_set_audio_sample(retro_audio_sample_t cb)
