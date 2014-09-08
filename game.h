@@ -61,6 +61,7 @@ void draw_rect(int x, int y, int w, int h, uint32_t c);
 void blit(int dest_x, int dest_y, int w, int h, int total_w, int total_h, uint32_t *data, int orig_x, int orig_y);
 void draw_image(int x, int y, int w, int h, uint32_t *data);
 void draw_tile(int dest_x, int dest_y, int w, int h, int total_w, int total_h, uint32_t *data, int id);
+void add_entity(entity_t ent);
 void render_game();
 void load_game();
 

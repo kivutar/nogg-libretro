@@ -37,5 +37,7 @@ entity_t obake_new()
    self.update = &update;
    self.draw = &draw;
 
+   add_entity(flame_new(&self));
+
    return self;
 }

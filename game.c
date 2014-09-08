@@ -1,10 +1,14 @@
 #include "game.h"
 
-entity_t map;
-entity_t obake;
-entity_t flame1;
-entity_t flame2;
-entity_t flame3;
+int num_entities = 0;
+entity_t* entities = NULL;
+
+void add_entity(entity_t ent)
+{
+   num_entities++;
+   entities = (entity_t*)realloc(entities, num_entities * sizeof(entity_t));
+   entities[num_entities-1] = ent;
+}
 
 void draw_rect(int x, int y, int w, int h, uint32_t c)
 {
@@ -49,32 +53,24 @@ void draw_tile(int dest_x, int dest_y, int w, int h, int total_w, int total_h, u
 
 void load_game()
 {
-   map = map_new();
-
-   obake = obake_new();
-
-   flame1 = flame_new(&obake);
-   flame1.t = 0;
-   flame2 = flame_new(&obake);
-   flame2.t = 1;
-   flame3 = flame_new(&obake);
-   flame3.t = 2;
+   add_entity(map_new());
+   add_entity(obake_new());
 }
 
 void render_game()
 {
-   obake.update(&obake);
-   flame1.update(&flame1);
-   flame2.update(&flame2);
-   flame3.update(&flame3);
+   int i;
+   for(i = 0; i < num_entities; i++)
+   {
+      entities[i].update(&entities[i]);
+   }
 
    draw_rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0xff000000);
 
-   map.draw(&map);
-   obake.draw(&obake);
-   flame1.draw(&flame1);
-   flame2.draw(&flame2);
-   flame3.draw(&flame3);
+   for(i = 0; i < num_entities; i++)
+   {
+      entities[i].draw(&entities[i]);
+   }
    
    video_cb(fb, SCREEN_WIDTH, SCREEN_HEIGHT, fbpitch*2);
 }
