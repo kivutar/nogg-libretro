@@ -1,4 +1,5 @@
 #include "game.h"
+#include "json.h"
 
 static uint32_t *img_map;
 static json_value data;

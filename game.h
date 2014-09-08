@@ -11,7 +11,6 @@
 #include <stdbool.h>
 #include "libretro.h"
 #include "rpng.h"
-#include "json.h"
 
 #define SCREEN_WIDTH 320
 #define SCREEN_HEIGHT 240
