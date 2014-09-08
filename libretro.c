@@ -1,71 +1,11 @@
 #include "libretro.h"
-
-#include "rpng.h"
-#include "json.h"
-
-#include <stdint.h>
-#include <string.h>
-#include <math.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include <errno.h>
-#include <stdbool.h>
-
-#define SCREEN_WIDTH 320
-#define SCREEN_HEIGHT 240
-
-static uint32_t fb[SCREEN_WIDTH * SCREEN_HEIGHT * 2];
-size_t fbpitch = SCREEN_WIDTH * sizeof(uint32_t);
-
-retro_log_printf_t log_cb;
-retro_video_refresh_t video_cb;
-static retro_audio_sample_t audio_cb;
-static retro_audio_sample_batch_t audio_batch_cb;
-static retro_environment_t environ_cb;
-static retro_input_poll_t input_poll_cb;
-static retro_input_state_t input_state_cb;
-
-typedef struct
-{
-   int   w;
-   int   h;
-   int   tw;
-   int   th;
-   float x;
-   float y;
-   float v;
-   float f;
-   float t;
-   bool  d;
-   uint32_t *image;
-} entity_t;
-
-typedef struct
-{
-   int up;
-   int down;
-   int left;
-   int right;
-   int start;
-   int select;
-} key_state_t;
+#include "game.h"
 
 float frame_time = 0;
 
-uint32_t *img_obake_left = NULL;
-uint32_t *img_obake_right = NULL;
-uint32_t *img_blueflame = NULL;
-uint32_t *img_forestground = NULL;
-uint32_t *anim = NULL;
-
-entity_t obake;
-entity_t flame1;
-entity_t flame2;
-entity_t flame3;
-
 void retro_init(void)
 {
+   fbpitch = SCREEN_WIDTH * sizeof(uint32_t);
 }
 
 void retro_deinit(void)
@@ -150,65 +90,8 @@ static void frame_time_cb(retro_usec_t usec)
    frame_time = usec / 1000000.0;
 }
 
-void draw_rect(int x, int y, int w, int h, uint32_t c)
-{
-   int i, j;
-   for (j = y; j < y+h; j++)
-      for (i = x; i < x+w; i++)
-         fb[j * (fbpitch >> 1) + i] = c;
-}
-
-void draw_anim(int x, int y, int w, int h, int tw, int th, uint32_t *data, int id)
-{
-   int i, j, ii, jj = 0;
-   int imgpitch = tw * sizeof(uint16_t);
-   for (j = y; j < y+h; j++) {
-      ii = id * w;
-      if (j >= 0 && j < SCREEN_HEIGHT) {
-         for (i = x; i < x+w; i++) {
-            if (i >= 0 && i < SCREEN_WIDTH) {
-               uint32_t c = data[jj * (imgpitch >> 1) + ii];
-               if (0xff000000 & c)
-                  fb[j * (fbpitch >> 1) + i] = c;
-            }
-            ii++;
-         }
-      }
-      jj++;
-   }
-}
-
-void draw_image(int x, int y, int w, int h, uint32_t *data)
-{
-   draw_anim(x, y, w, h, w, h, data, 0);
-}
-
-void draw_tile(int x, int y, int w, int h, uint32_t *data, int id)
-{
-   int i, j, ii, jj = 0;
-   int idy = (id/20)*16;
-   int idx = (id%20)*16;
-   for (j = y; j < y+h; j++) {
-      ii = idy * w;
-      if (j >= 0 && j < SCREEN_HEIGHT) {
-         for (i = x; i < x+w; i++) {
-            int imgpitch = 386 * sizeof(uint16_t);
-            uint32_t c = data[jj * (imgpitch >> 1) + ii];
-            if (i >= 0 && i < SCREEN_WIDTH) {
-               if (0xff000000 & c)
-                  fb[j * (fbpitch >> 1) + i] = c;
-            }
-            ii++;
-         }
-      }
-      jj++;
-   }
-}
-
 void retro_run(void)
 {
-   key_state_t ks;
-
    input_poll_cb();
 
    ks.up     = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP);
@@ -218,68 +101,7 @@ void retro_run(void)
    ks.start  = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_START);
    ks.select = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT);
 
-   if (ks.up)    { obake.y -= obake.v; }
-   if (ks.down)  { obake.y += obake.v; }
-   if (ks.left)  { obake.x -= obake.v; obake.d = false; }
-   if (ks.right) { obake.x += obake.v; obake.d = true;  }
-
-   draw_rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0xff000000);
-
-   obake.t += 0.05;
-   obake.f = cos(obake.t)*3;
-   obake.image = obake.d ? img_obake_right : img_obake_left;
-   draw_image((int)obake.x, (int)obake.y + (int)obake.f, obake.w, obake.h, obake.image);
-
-   if (flame1.t == 30)
-      flame1.t = 0;
-
-   flame1.x = obake.x + obake.w/2 - flame1.w/2 + cos(obake.t)*30;
-   flame1.y = obake.y + obake.h/2 - flame1.w/2 + sin(obake.t)*30 + obake.f;
-   draw_anim((int)flame1.x, (int)flame1.y + (int)flame1.f, flame1.w, flame1.h, flame1.tw, flame1.th, flame1.image, flame1.t++/10);
-
-   flame2.x = obake.x + obake.w/2 - flame2.w/2 + cos(obake.t+1)*30;
-   flame2.y = obake.y + obake.h/2 - flame2.w/2 + sin(obake.t+1)*30 + obake.f;
-   draw_anim((int)flame2.x, (int)flame2.y + (int)flame2.f, flame2.w, flame2.h, flame2.tw, flame2.th, flame2.image, flame1.t++/10);
-
-   flame3.x = obake.x + obake.w/2 - flame3.w/2 + cos(obake.t+2)*30;
-   flame3.y = obake.y + obake.h/2 - flame3.w/2 + sin(obake.t+2)*30 + obake.f;
-   draw_anim((int)flame3.x, (int)flame3.y + (int)flame3.f, flame3.w, flame3.h, flame3.tw, flame3.th, flame3.image, flame1.t++/10);
-
-   /*char jsonstring[4096*2];
-   FILE *fp = fopen("/usr/share/obake/test.json", "rb");
-   if (fp)
-   {
-      fread(jsonstring, sizeof(char), sizeof(jsonstring)-1, fp);
-      fclose(fp);
-   }
-
-   json_value data = * json_parse(jsonstring, strlen(jsonstring));
-
-   int i, j, k;
-   for(i = 0; i < data.u.object.length; i++) {
-      if (!strcmp(data.u.object.values[i].name, "layers")) {
-         json_value *layers = data.u.object.values[i].value;
-         for(j = 0; j < layers->u.array.length; j++) {
-            json_value *layer = layers->u.array.values[0];
-            for(k = 0; k < layer->u.object.length; k++) {
-               if (!strcmp(layer->u.object.values[k].name, "data")) {
-                  json_value *layerdata = layer->u.object.values[k].value;
-
-                  int x, y;
-                  for (y = 0; y < 15; y++) {
-                     for (x = 0; x < 20; x++) {
-                        draw_tile(x*16, y*16, 16, 16, img_forestground, 
-                           layerdata->u.array.values[y*20+x]->u.integer);
-                     }
-                  }
-
-               }
-            }
-         }
-      }
-   }*/
-
-   video_cb(fb, SCREEN_WIDTH, SCREEN_HEIGHT, fbpitch*2);
+   render_game();
 }
 
 bool retro_load_game(const struct retro_game_info *info)
@@ -292,36 +114,7 @@ bool retro_load_game(const struct retro_game_info *info)
    frame_cb.callback(frame_cb.reference);
    environ_cb(RETRO_ENVIRONMENT_SET_FRAME_TIME_CALLBACK, &frame_cb);
 
-   unsigned width = 0, height = 0;
-   rpng_load_image_argb("/usr/share/obake/obake_left.png", &img_obake_left, &width, &height);
-   rpng_load_image_argb("/usr/share/obake/obake_right.png", &img_obake_right, &width, &height);
-   rpng_load_image_argb("/usr/share/obake/blueflame.png", &img_blueflame, &width, &height);
-   rpng_load_image_argb("/usr/share/obake/forestground.png", &img_forestground, &width, &height);
-
-   obake.w = 48;
-   obake.h = 48;
-   obake.x = SCREEN_WIDTH/2  - obake.w/2;
-   obake.y = SCREEN_HEIGHT/2 - obake.h/2;
-   obake.v = 1.0;
-   obake.image = img_obake_left;
-
-   flame1.w = 16;
-   flame1.h = 16;
-   flame1.tw = 16*3;
-   flame1.th = 16;
-   flame1.image = img_blueflame;
-
-   flame2.w = 16;
-   flame2.h = 16;
-   flame2.tw = 16*3;
-   flame2.th = 16;
-   flame2.image = img_blueflame;
-
-   flame3.w = 16;
-   flame3.h = 16;
-   flame3.tw = 16*3;
-   flame3.th = 16;
-   flame3.image = img_blueflame;
+   load_game();
 
    (void)info;
    return true;

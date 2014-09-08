@@ -60,7 +60,7 @@ else
    CFLAGS += -O3
 endif
 
-OBJECTS := rpng.o json.o libretro.o
+OBJECTS := obake.o game.o rpng.o json.o libretro.o
 CFLAGS += -Wall -pedantic $(fpic) $(PLATFORM_DEFINES)
 
 CFLAGS +=
@@ -99,4 +99,3 @@ install: all
 	cp -r assets/* /usr/share/obake
 
 .PHONY: clean
-
