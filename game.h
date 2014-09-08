@@ -25,7 +25,7 @@ retro_environment_t environ_cb;
 retro_input_poll_t input_poll_cb;
 retro_input_state_t input_state_cb;
 
-typedef struct
+typedef struct entity_s
 {
    int   w;
    int   h;
@@ -38,8 +38,8 @@ typedef struct
    float t;
    bool  d;
    uint32_t *image;
-   void (*update)(void *);
-   void (*draw)(void *);
+   void (*update)(struct entity_s *);
+   void (*draw)(struct entity_s *);
 } entity_t;
 
 typedef struct
