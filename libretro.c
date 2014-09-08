@@ -30,6 +30,8 @@ typedef struct
 {
    int   w;
    int   h;
+   int   tw;
+   int   th;
    float x;
    float y;
    float v;
@@ -55,6 +57,7 @@ uint32_t *img_obake_left = NULL;
 uint32_t *img_obake_right = NULL;
 uint32_t *img_blueflame = NULL;
 uint32_t *img_forestground = NULL;
+uint32_t *anim = NULL;
 
 entity_t obake;
 entity_t flame1;
@@ -155,46 +158,50 @@ void draw_rect(int x, int y, int w, int h, uint32_t c)
          fb[j * (fbpitch >> 1) + i] = c;
 }
 
-void draw_image(int x, int y, int w, int h, uint32_t *data)
+void draw_anim(int x, int y, int w, int h, int tw, int th, uint32_t *data, int id)
 {
    int i, j, ii, jj = 0;
+   int imgpitch = tw * sizeof(uint16_t);
    for (j = y; j < y+h; j++) {
-      jj++;
-      ii = 0;
+      ii = id * w;
       if (j >= 0 && j < SCREEN_HEIGHT) {
          for (i = x; i < x+w; i++) {
+            if (i >= 0 && i < SCREEN_WIDTH) {
+               uint32_t c = data[jj * (imgpitch >> 1) + ii];
+               if (0xff000000 & c)
+                  fb[j * (fbpitch >> 1) + i] = c;
+            }
             ii++;
-            int imgpitch = w * sizeof(uint16_t);
+         }
+      }
+      jj++;
+   }
+}
+
+void draw_image(int x, int y, int w, int h, uint32_t *data)
+{
+   draw_anim(x, y, w, h, w, h, data, 0);
+}
+
+void draw_tile(int x, int y, int w, int h, uint32_t *data, int id)
+{
+   int i, j, ii, jj = 0;
+   int idy = (id/20)*16;
+   int idx = (id%20)*16;
+   for (j = y; j < y+h; j++) {
+      ii = idy * w;
+      if (j >= 0 && j < SCREEN_HEIGHT) {
+         for (i = x; i < x+w; i++) {
+            int imgpitch = 386 * sizeof(uint16_t);
             uint32_t c = data[jj * (imgpitch >> 1) + ii];
             if (i >= 0 && i < SCREEN_WIDTH) {
                if (0xff000000 & c)
                   fb[j * (fbpitch >> 1) + i] = c;
             }
-         }
-      }
-   }
-}
-
-void draw_tile(int x, int y, int w, int h, uint32_t *data, int id)
-{
-   int Y = (id / 23) * 16;
-   int X = (id % 23) * 16;
-
-   int i, j, ii, jj = 0;
-   for (j = y; j < y+h; j++) {
-      jj++;
-      ii = 0;
-      if (j >= 0 && j < SCREEN_HEIGHT) {
-         for (i = x; i < x+w; i++) {
             ii++;
-            int imgpitch = 386 * sizeof(uint16_t);
-            uint32_t c = data[Y * (imgpitch >> 1) + X];
-            if (i >= 0 && i < SCREEN_WIDTH) {
-               if (0xff000000 & c)
-                  fb[j * (fbpitch >> 1) + i] = c;
-            }
          }
       }
+      jj++;
    }
 }
 
@@ -223,19 +230,22 @@ void retro_run(void)
    obake.image = obake.d ? img_obake_right : img_obake_left;
    draw_image((int)obake.x, (int)obake.y + (int)obake.f, obake.w, obake.h, obake.image);
 
+   if (flame1.t == 30)
+      flame1.t = 0;
+
    flame1.x = obake.x + obake.w/2 - flame1.w/2 + cos(obake.t)*30;
    flame1.y = obake.y + obake.h/2 - flame1.w/2 + sin(obake.t)*30 + obake.f;
-   draw_image((int)flame1.x, (int)flame1.y + (int)flame1.f, flame1.w, flame1.h, flame1.image);
+   draw_anim((int)flame1.x, (int)flame1.y + (int)flame1.f, flame1.w, flame1.h, flame1.tw, flame1.th, flame1.image, flame1.t++/10);
 
    flame2.x = obake.x + obake.w/2 - flame2.w/2 + cos(obake.t+1)*30;
    flame2.y = obake.y + obake.h/2 - flame2.w/2 + sin(obake.t+1)*30 + obake.f;
-   draw_image((int)flame2.x, (int)flame2.y + (int)flame2.f, flame2.w, flame2.h, flame2.image);
+   draw_anim((int)flame2.x, (int)flame2.y + (int)flame2.f, flame2.w, flame2.h, flame2.tw, flame2.th, flame2.image, flame1.t++/10);
 
    flame3.x = obake.x + obake.w/2 - flame3.w/2 + cos(obake.t+2)*30;
    flame3.y = obake.y + obake.h/2 - flame3.w/2 + sin(obake.t+2)*30 + obake.f;
-   draw_image((int)flame3.x, (int)flame3.y + (int)flame3.f, flame3.w, flame3.h, flame3.image);
+   draw_anim((int)flame3.x, (int)flame3.y + (int)flame3.f, flame3.w, flame3.h, flame3.tw, flame3.th, flame3.image, flame1.t++/10);
 
-   char jsonstring[4096*2];
+   /*char jsonstring[4096*2];
    FILE *fp = fopen("/usr/share/obake/test.json", "rb");
    if (fp)
    {
@@ -267,7 +277,7 @@ void retro_run(void)
             }
          }
       }
-   }
+   }*/
 
    video_cb(fb, SCREEN_WIDTH, SCREEN_HEIGHT, fbpitch*2);
 }
@@ -289,22 +299,28 @@ bool retro_load_game(const struct retro_game_info *info)
    rpng_load_image_argb("/usr/share/obake/forestground.png", &img_forestground, &width, &height);
 
    obake.w = 48;
-   obake.h = 46;
+   obake.h = 48;
    obake.x = SCREEN_WIDTH/2  - obake.w/2;
    obake.y = SCREEN_HEIGHT/2 - obake.h/2;
    obake.v = 1.0;
    obake.image = img_obake_left;
 
    flame1.w = 16;
-   flame1.h = 14;
+   flame1.h = 16;
+   flame1.tw = 16*3;
+   flame1.th = 16;
    flame1.image = img_blueflame;
 
    flame2.w = 16;
-   flame2.h = 14;
+   flame2.h = 16;
+   flame2.tw = 16*3;
+   flame2.th = 16;
    flame2.image = img_blueflame;
 
    flame3.w = 16;
-   flame3.h = 14;
+   flame3.h = 16;
+   flame3.tw = 16*3;
+   flame3.th = 16;
    flame3.image = img_blueflame;
 
    (void)info;
