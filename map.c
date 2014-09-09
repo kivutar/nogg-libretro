@@ -1,6 +1,7 @@
 #include "game.h"
 #include "json.h"
 
+static entity_t self;
 static uint32_t *img_map;
 static json_value data;
 
@@ -25,7 +26,7 @@ static void draw(entity_t *self)
                      for (x = 0; x < 20; x++) {
                         int id = layerdata->u.array.values[y*20+x]->u.integer;
                         if (id)
-                           draw_tile(x*16, y*16, 16, 16, 16*4, 16*2, img_map, id);
+                           draw_tile(x*16, y*16, 16, 16, 16*23, 16*10, img_map, id);
                      }
                   }
 
@@ -36,7 +37,7 @@ static void draw(entity_t *self)
    }
 }
 
-entity_t map_new()
+entity_t* map_new()
 {
    unsigned width, height = 0;
    rpng_load_image_argb("/usr/share/obake/forestground.png", &img_map, &width, &height);
@@ -51,8 +52,7 @@ entity_t map_new()
 
    data = * json_parse(jsonstring, strlen(jsonstring));
 
-   entity_t self;
    self.update = &update;
    self.draw = &draw;
-   return self;
+   return &self;
 }

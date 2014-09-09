@@ -1,12 +1,12 @@
 #include "game.h"
 
 int num_entities = 0;
-entity_t* entities = NULL;
+entity_t** entities = NULL;
 
-void add_entity(entity_t ent)
+void add_entity(entity_t* ent)
 {
    num_entities++;
-   entities = (entity_t*)realloc(entities, num_entities * sizeof(entity_t));
+   entities = (entity_t**)realloc(entities, num_entities * sizeof(entity_t));
    entities[num_entities-1] = ent;
 }
 
@@ -46,9 +46,31 @@ void draw_image(int x, int y, int w, int h, uint32_t *data)
 
 void draw_tile(int dest_x, int dest_y, int w, int h, int total_w, int total_h, uint32_t *data, int id)
 {
-   int orig_x = (id-1)/(total_w/w)*w;
-   int orig_y = (id-1)%(total_w/w)*w;
+   int orig_x = ((id-1)%(total_w/w))*w;
+   int orig_y = ((id-1)/(total_w/w))*w;
    blit(dest_x, dest_y, w, h, total_w, total_h, data, orig_x, orig_y);
+}
+
+void draw_anim(int dest_x, int dest_y, anim_t *anim)
+{
+   int steps = anim->tw / anim->w;
+
+   anim->t++;
+   if (anim->t == steps * anim->p)
+      anim->t = 0;
+
+   int id = anim->t/anim->p;
+
+   blit(
+      dest_x, 
+      dest_y, 
+      anim->w, 
+      anim->h, 
+      anim->tw, 
+      anim->th, 
+      anim->image, 
+      id * anim->w, 
+      0);
 }
 
 void load_game()
@@ -62,14 +84,14 @@ void render_game()
    int i;
    for(i = 0; i < num_entities; i++)
    {
-      entities[i].update(&entities[i]);
+      entities[i]->update(entities[i]);
    }
 
    draw_rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0xff000000);
 
    for(i = 0; i < num_entities; i++)
    {
-      entities[i].draw(&entities[i]);
+      entities[i]->draw(entities[i]);
    }
    
    video_cb(fb, SCREEN_WIDTH, SCREEN_HEIGHT, fbpitch*2);

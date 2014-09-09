@@ -23,19 +23,28 @@ retro_environment_t environ_cb;
 retro_input_poll_t input_poll_cb;
 retro_input_state_t input_state_cb;
 
+typedef struct anim_s
+{
+   uint32_t *image;
+   int t;
+   int p;
+   int w;
+   int h;
+   int tw;
+   int th;
+} anim_t;
+
 typedef struct entity_s
 {
    int   w;
    int   h;
-   int   tw;
-   int   th;
    float x;
    float y;
    float v;
    float f;
    float t;
    bool  d;
-   uint32_t *image;
+   anim_t *anim;
    void (*update)(struct entity_s *);
    void (*draw)(struct entity_s *);
 } entity_t;
@@ -60,13 +69,14 @@ void draw_rect(int x, int y, int w, int h, uint32_t c);
 void blit(int dest_x, int dest_y, int w, int h, int total_w, int total_h, uint32_t *data, int orig_x, int orig_y);
 void draw_image(int x, int y, int w, int h, uint32_t *data);
 void draw_tile(int dest_x, int dest_y, int w, int h, int total_w, int total_h, uint32_t *data, int id);
-void add_entity(entity_t ent);
+void draw_anim(int dest_x, int dest_y, anim_t* anim);
+void add_entity(entity_t* ent);
 void render_game();
 void load_game();
 
-entity_t map_new();
-entity_t obake_new();
-entity_t flame_new(entity_t *center);
+entity_t* map_new();
+entity_t* obake_new();
+entity_t* flame_new(entity_t *center);
 
 uint32_t fb[SCREEN_WIDTH * SCREEN_HEIGHT * 2];
 size_t fbpitch;
