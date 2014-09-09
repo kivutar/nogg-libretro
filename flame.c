@@ -2,7 +2,6 @@
 
 static entity_t self;
 static entity_t *c;
-static uint32_t *img_flame;
 static anim_t anim_flame;
 
 static void update(entity_t *self)
@@ -25,16 +24,11 @@ entity_t* flame_new(entity_t *center)
 {
    c = center;
 
-   unsigned width, height = 0;
-   rpng_load_image_argb("/usr/share/obake/blueflame.png", &img_flame, &width, &height);
-
-   anim_flame.image = img_flame;
+   anim_flame.surface = surface_new("/usr/share/obake/blueflame.png");
    anim_flame.t = 0;
    anim_flame.p = 10;
    anim_flame.w = 16;
    anim_flame.h = 16;
-   anim_flame.tw = 48;
-   anim_flame.th = 16;
 
    self.w = 16;
    self.h = 16;

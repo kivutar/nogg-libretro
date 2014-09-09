@@ -1,8 +1,6 @@
 #include "game.h"
 
 static entity_t self;
-static uint32_t *img_obake_left;
-static uint32_t *img_obake_right;
 static anim_t anim_obake_left;
 static anim_t anim_obake_right;
 
@@ -16,6 +14,10 @@ static void update(entity_t *self)
    self->t += 0.05;
    self->f = cos(self->t)*3;
    self->anim = self->d ? &anim_obake_right : &anim_obake_left;
+
+   camera.x = - self->x + SCREEN_WIDTH/2 - self->w/2;
+   if (camera.x > 0)
+      camera.x = 0;
 }
 
 static void draw(entity_t *self)
@@ -28,25 +30,17 @@ static void draw(entity_t *self)
 
 entity_t* obake_new()
 {
-   unsigned width, height = 0;
-   rpng_load_image_argb("/usr/share/obake/obake_left.png", &img_obake_left, &width, &height);
-   rpng_load_image_argb("/usr/share/obake/obake_right.png", &img_obake_right, &width, &height);
-
-   anim_obake_left.image = img_obake_left;
+   anim_obake_left.surface = surface_new("/usr/share/obake/obake_left.png");
    anim_obake_left.t = 0;
    anim_obake_left.p = 1;
    anim_obake_left.w = 48;
    anim_obake_left.h = 48;
-   anim_obake_left.tw = 48;
-   anim_obake_left.th = 48;
 
-   anim_obake_right.image = img_obake_right;
+   anim_obake_right.surface = surface_new("/usr/share/obake/obake_right.png");
    anim_obake_right.t = 0;
    anim_obake_right.p = 1;
    anim_obake_right.w = 48;
    anim_obake_right.h = 48;
-   anim_obake_right.tw = 48;
-   anim_obake_right.th = 48;
 
    self.w = 48;
    self.h = 48;

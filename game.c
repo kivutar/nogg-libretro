@@ -10,6 +10,13 @@ void add_entity(entity_t* ent)
    entities[num_entities-1] = ent;
 }
 
+surface_t surface_new(char *name)
+{
+   surface_t s;
+   rpng_load_image_argb(name, &s.image, &s.w, &s.h);
+   return s;
+}
+
 void draw_rect(int x, int y, int w, int h, uint32_t c)
 {
    int i, j;
@@ -48,29 +55,26 @@ void draw_tile(int dest_x, int dest_y, int w, int h, int total_w, int total_h, u
 {
    int orig_x = ((id-1)%(total_w/w))*w;
    int orig_y = ((id-1)/(total_w/w))*w;
-   blit(dest_x, dest_y, w, h, total_w, total_h, data, orig_x, orig_y);
+   blit(dest_x + camera.x, dest_y + camera.y, w, h, total_w, total_h, data, orig_x, orig_y);
 }
 
 void draw_anim(int dest_x, int dest_y, anim_t *anim)
 {
-   int steps = anim->tw / anim->w;
+   int steps = anim->surface.w / anim->w;
 
    anim->t++;
    if (anim->t == steps * anim->p)
       anim->t = 0;
 
-   int id = anim->t/anim->p;
-
-   blit(
+   draw_tile(
       dest_x, 
       dest_y, 
       anim->w, 
       anim->h, 
-      anim->tw, 
-      anim->th, 
-      anim->image, 
-      id * anim->w, 
-      0);
+      anim->surface.w, 
+      anim->surface.h, 
+      anim->surface.image, 
+      anim->t/anim->p + 1);
 }
 
 void load_game()

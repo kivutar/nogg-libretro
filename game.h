@@ -23,15 +23,20 @@ retro_environment_t environ_cb;
 retro_input_poll_t input_poll_cb;
 retro_input_state_t input_state_cb;
 
-typedef struct anim_s
+typedef struct surface_s
 {
    uint32_t *image;
+   unsigned w;
+   unsigned h;
+} surface_t;
+
+typedef struct anim_s
+{
+   surface_t surface;
    int t;
    int p;
    int w;
    int h;
-   int tw;
-   int th;
 } anim_t;
 
 typedef struct entity_s
@@ -61,10 +66,9 @@ typedef struct
 
 key_state_t ks;
 
-uint32_t *img_blueflame;
-uint32_t *img_forestground;
-uint32_t *anim;
+entity_t camera;
 
+surface_t surface_new(char *name);
 void draw_rect(int x, int y, int w, int h, uint32_t c);
 void blit(int dest_x, int dest_y, int w, int h, int total_w, int total_h, uint32_t *data, int orig_x, int orig_y);
 void draw_image(int x, int y, int w, int h, uint32_t *data);
