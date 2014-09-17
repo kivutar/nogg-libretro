@@ -62,6 +62,10 @@ typedef struct
    int right;
    int start;
    int select;
+   int a;
+   int b;
+   int x;
+   int y;
 } key_state_t;
 
 key_state_t ks;
@@ -81,6 +85,7 @@ void load_game();
 entity_t* map_new();
 entity_t* obake_new();
 entity_t* flame_new(entity_t *center);
+entity_t* ninja_new();
 
 uint32_t fb[SCREEN_WIDTH * SCREEN_HEIGHT * 2];
 size_t fbpitch;

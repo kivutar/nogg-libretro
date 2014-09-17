@@ -6,10 +6,10 @@ static anim_t anim_obake_right;
 
 static void update(entity_t *self)
 {
-   if (ks.up)    { self->y -= self->v; }
+   /*if (ks.up)    { self->y -= self->v; }
    if (ks.down)  { self->y += self->v; }
    if (ks.left)  { self->x -= self->v; self->d = false; }
-   if (ks.right) { self->x += self->v; self->d = true; }
+   if (ks.right) { self->x += self->v; self->d = true; }*/
 
    self->t += 0.05;
    self->f = cos(self->t)*3;

@@ -63,8 +63,11 @@ void draw_anim(int dest_x, int dest_y, anim_t *anim)
    int steps = anim->surface.w / anim->w;
 
    anim->t++;
-   if (anim->t == steps * anim->p)
+   if (anim->t >= steps * anim->p)
       anim->t = 0;
+
+   if (!anim->p)
+      anim->p = 1;
 
    draw_tile(
       dest_x, 
@@ -81,6 +84,7 @@ void load_game()
 {
    add_entity(map_new());
    add_entity(obake_new());
+   add_entity(ninja_new());
 }
 
 void render_game()
