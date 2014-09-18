@@ -3,13 +3,6 @@
 int num_entities = 0;
 entity_t** entities = NULL;
 
-void add_entity(entity_t* ent)
-{
-   num_entities++;
-   entities = (entity_t**)realloc(entities, num_entities * sizeof(entity_t));
-   entities[num_entities-1] = ent;
-}
-
 surface_t surface_new(char *name)
 {
    surface_t s;
@@ -82,25 +75,23 @@ void draw_anim(int dest_x, int dest_y, anim_t *anim)
 
 void load_game()
 {
-   add_entity(map_new());
-   add_entity(obake_new());
-   add_entity(ninja_new());
+   map_new();
+   ninja_new();
+   obake_new();
 }
 
 void render_game()
 {
    int i;
    for(i = 0; i < num_entities; i++)
-   {
       entities[i]->update(entities[i]);
-   }
 
    draw_rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0xff000000);
 
+   detect_collisions();
+
    for(i = 0; i < num_entities; i++)
-   {
-      entities[i]->draw(entities[i]);
-   }
+      entities[i]->draw(entities[i]);  
    
    video_cb(fb, SCREEN_WIDTH, SCREEN_HEIGHT, fbpitch*2);
 }

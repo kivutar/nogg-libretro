@@ -1,6 +1,5 @@
 #include "game.h"
 
-static entity_t self;
 static anim_t anim_ninja_stand_left;
 static anim_t anim_ninja_stand_right;
 static anim_t anim_ninja_run_left;
@@ -18,23 +17,16 @@ static float ax = 0.1;
 
 static bool on_the_ground(entity_t *self)
 {
-   return self->y == 240 - 48 - 32;
+   return solid_at(self->x+8, self->y+33);
 }
 
 static void update(entity_t *self)
 {
    // apply gravity if not on the ground
-   if (self->y < 240 - 48 - 32)
+   if (!on_the_ground(self))
    {
       vy += ay;
       self->y += vy;
-   }
-
-   // disable gravity if on the ground
-   if (self->y >= 240 - 48 - 32)
-   {
-      vy = 0;
-      self->y = 240 - 48 - 32;
    }
 
    // jumping
@@ -59,7 +51,7 @@ static void update(entity_t *self)
    }
 
    // apply speed
-   self->x += floor(vx);
+   self->x += vx;
 
    // decelerating
    if (!(ks.right && vx > 0) && !(ks.left && vx < 0) && on_the_ground(self))
@@ -87,9 +79,9 @@ static void update(entity_t *self)
       self->anim = self->d ? &anim_ninja_run_right : &anim_ninja_run_left;
 
    // jump animation
-   if (vy < 0)
+   if (!on_the_ground(self) && vy < 0)
       self->anim = self->d ? &anim_ninja_jump_right : &anim_ninja_jump_left;
-   if (vy > 0)
+   if (!on_the_ground(self) && vy > 0)
       self->anim = self->d ? &anim_ninja_fall_right : &anim_ninja_fall_left;
 
    // duck animation
@@ -100,14 +92,43 @@ static void update(entity_t *self)
    camera.x = - self->x + SCREEN_WIDTH/2 - self->w/2;
    if (camera.x > 0)
       camera.x = 0;
+   if (camera.x < -1280 + SCREEN_WIDTH)
+      camera.x = -1280 + SCREEN_WIDTH;
 }
 
 static void draw(entity_t *self)
 {
    draw_anim(
-      (int)self->x,
-      (int)self->y,
+      self->x - 16,
+      self->y - 16,
       self->anim);
+}
+
+static void on_collide(entity_t *self, entity_t *other, int dx, int dy)
+{
+   if (abs(dy) < abs(dx) && dy < 0)
+   {
+      vy = 0;
+      self->y += dy;
+   }
+
+   if (abs(dx) < abs(dy) && dx < 0)
+   {
+      vx = 0;
+      self->x += dx;
+   }
+
+   if (abs(dx) < abs(dy) && dx > 0)
+   {
+      vx = 0;
+      self->x += dx;
+   }
+
+   if (abs(dx) < abs(dy) && dx < 0)
+   {
+      vx = 0;
+      self->x += dx;
+   }
 }
 
 entity_t* ninja_new()
@@ -172,15 +193,22 @@ entity_t* ninja_new()
    anim_ninja_duck_right.w = 48;
    anim_ninja_duck_right.h = 48;
 
-   self.w = 48;
-   self.h = 48;
-   self.x = SCREEN_WIDTH/2  - self.w/2;
-   self.y = SCREEN_HEIGHT/2 - self.h/2;
-   self.v = 1.0;
-   self.d = true;
-   self.anim = &anim_ninja_stand_left;
-   self.update = &update;
-   self.draw = &draw;
+   entity_t *self = NULL;
+   self = (entity_t*)realloc(self, sizeof(entity_t));
 
-   return &self;
+   self->w = 16;
+   self->h = 32;
+   self->x = SCREEN_WIDTH/2  - self->w/2;
+   self->y = SCREEN_HEIGHT/2 - self->h/2;
+   self->d = true;
+   self->anim = &anim_ninja_stand_left;
+   self->update = &update;
+   self->draw = &draw;
+   self->on_collide = &on_collide;
+
+   num_entities++;
+   entities = (entity_t**)realloc(entities, num_entities * sizeof(entity_t));
+   entities[num_entities-1] = self;
+
+   return self;
 }

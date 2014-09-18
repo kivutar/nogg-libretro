@@ -41,17 +41,17 @@ typedef struct anim_s
 
 typedef struct entity_s
 {
-   int   w;
-   int   h;
-   float x;
-   float y;
-   float v;
-   float f;
+   int w;
+   int h;
+   int x;
+   int y;
+   int f;
    float t;
    bool  d;
    anim_t *anim;
    void (*update)(struct entity_s *);
    void (*draw)(struct entity_s *);
+   void (*on_collide)(struct entity_s *, struct entity_s *, int dx, int dy);
 } entity_t;
 
 typedef struct
@@ -81,13 +81,19 @@ void draw_anim(int dest_x, int dest_y, anim_t* anim);
 void add_entity(entity_t* ent);
 void render_game();
 void load_game();
+void detect_collisions();
+bool solid_at(int x, int y);
 
 entity_t* map_new();
 entity_t* obake_new();
 entity_t* flame_new(entity_t *center);
 entity_t* ninja_new();
+entity_t* ground_new(int x, int y, int w, int h);
 
 uint32_t fb[SCREEN_WIDTH * SCREEN_HEIGHT * 2];
 size_t fbpitch;
+
+extern int num_entities;
+extern entity_t** entities;
 
 #endif

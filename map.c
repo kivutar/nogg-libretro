@@ -2,7 +2,6 @@
 #include "json.h"
 #include "strl.h"
 
-static entity_t self;
 static json_value data;
 static int width, height, tilewidth, tileheight;
 surface_t tileset_surfaces[10];
@@ -82,7 +81,7 @@ entity_t* map_new()
 
    data = * json_parse(jsonstring, strlen(jsonstring));
 
-   int i, j, k;
+   int i, j, k, l, m;
    for(i = 0; i < data.u.object.length; i++) {
 
       if (!strcmp(data.u.object.values[i].name, "width"))
@@ -96,7 +95,6 @@ entity_t* map_new()
 
       if (!strcmp(data.u.object.values[i].name, "tileheight"))
          tileheight = data.u.object.values[i].value->u.integer;
-
 
       if (!strcmp(data.u.object.values[i].name, "tilesets")) {
          json_value *tilesets = data.u.object.values[i].value;
@@ -118,9 +116,56 @@ entity_t* map_new()
             }
          }
       }
+
+      if (!strcmp(data.u.object.values[i].name, "layers")) {
+         json_value *layers = data.u.object.values[i].value;
+         for(j = 0; j < layers->u.array.length; j++) {
+            json_value *layer = layers->u.array.values[j];
+            for(k = 0; k < layer->u.object.length; k++) {
+               if (!strcmp(layer->u.object.values[k].name, "objects")) {
+                  json_value *objs = layer->u.object.values[k].value;
+                  for(l = 0; l < objs->u.array.length; l++) { // 1
+                     json_value *obj = objs->u.array.values[l];
+                     int ox = 0;
+                     int oy = 0;
+                     int ow = 0;
+                     int oh = 0;
+                     for(m = 0; m < obj->u.object.length; m++)
+                     {
+                        if (!strcmp(obj->u.object.values[m].name, "x"))
+                           ox = obj->u.object.values[m].value->u.integer;
+
+                        if (!strcmp(obj->u.object.values[m].name, "y"))
+                           oy = obj->u.object.values[m].value->u.integer;
+
+                        if (!strcmp(obj->u.object.values[m].name, "width"))
+                           ow = obj->u.object.values[m].value->u.integer;
+
+                        if (!strcmp(obj->u.object.values[m].name, "height"))
+                           oh = obj->u.object.values[m].value->u.integer;
+                     }
+                     ground_new(ox, oy, ow, oh);
+                  }
+               }
+            }
+         }
+      }
    }
 
-   self.update = &update;
-   self.draw = &draw;
-   return &self;
+   entity_t *self = NULL;
+   self = (entity_t*)realloc(self, sizeof(entity_t));
+
+   self->x = 0;
+   self->y = 0;
+   self->w = 0;
+   self->h = 0;
+   self->update = &update;
+   self->draw = &draw;
+   self->on_collide = NULL;
+
+   num_entities++;
+   entities = (entity_t**)realloc(entities, num_entities * sizeof(entity_t));
+   entities[num_entities-1] = self;
+
+   return self;
 }
