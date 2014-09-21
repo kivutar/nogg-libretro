@@ -72,7 +72,7 @@ static void draw(entity_t *self)
 entity_t* map_new()
 {
    char jsonstring[4096*10];
-   FILE *fp = fopen("/usr/share/obake/test.json", "rb");
+   FILE *fp = fopen("/usr/share/nogg/nogg_map.json", "rb");
    if (fp)
    {
       fread(jsonstring, sizeof(char), sizeof(jsonstring)-1, fp);
@@ -107,7 +107,7 @@ entity_t* map_new()
             {
                if (!strcmp(tileset->u.object.values[k].name, "image"))
                {
-                  strlcpy(filename, "/usr/share/obake/", sizeof(filename));
+                  strlcpy(filename, "/usr/share/nogg/", sizeof(filename));
                   strlcat(filename, tileset->u.object.values[i].value->u.string.ptr, sizeof(filename));
                   strlcat(filename, ".png", sizeof(filename));
 

@@ -1,6 +1,6 @@
-libretro-experiment
-===================
+nogg
+====
 
     make
     sudo make install
-    retroarch -L /usr/lib/libretro/obake_libretro.so
+    retroarch -L /usr/lib/libretro/nogg_libretro.so

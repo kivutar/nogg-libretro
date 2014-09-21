@@ -16,7 +16,7 @@ else ifneq ($(findstring win,$(shell uname -a)),)
 endif
 endif
 
-TARGET_NAME := obake
+TARGET_NAME := nogg
 
 fpic=
 ifeq ($(platform), unix)
@@ -60,7 +60,7 @@ else
    CFLAGS += -O3
 endif
 
-OBJECTS := collisions.o strl.o ground.o ninja.o map.o flame.o obake.o game.o rpng.o json.o libretro.o
+OBJECTS := pl.o collisions.o strl.o ground.o map.o game.o rpng.o json.o libretro.o
 CFLAGS += -Wall -pedantic $(fpic) $(PLATFORM_DEFINES)
 
 CFLAGS +=
@@ -95,7 +95,7 @@ clean:
 
 install: all
 	install -m755 $(TARGET) /usr/lib/libretro/
-	install -d -m755 /usr/share/obake
-	cp -r assets/* /usr/share/obake
+	install -d -m755 /usr/share/nogg
+	cp -r assets/* /usr/share/nogg
 
 .PHONY: clean

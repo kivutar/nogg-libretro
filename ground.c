@@ -14,6 +14,8 @@ entity_t* ground_new(int x, int y, int w, int h)
    entity_t *self = NULL;
    self = (entity_t*)realloc(self, sizeof(entity_t));
 
+   self->type = 1;
+
    self->x = x;
    self->y = y;
    self->w = w;

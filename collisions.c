@@ -12,7 +12,8 @@ void detect_collisions()
             entity_t *e1 = (entity_t*)entities[i];
             entity_t *e2 = (entity_t*)entities[j];
 
-            if (e1->x < e2->x + e2->w &&
+            if (e1->type != e2->type &&
+                e1->x < e2->x + e2->w &&
                 e1->x + e1->w > e2->x &&
                 e1->y < e2->y + e2->h &&
                 e1->h + e1->y > e2->y &&
@@ -41,7 +42,8 @@ bool solid_at(int x, int y)
       entity_t *e1 = (entity_t*)entities[i];
 
       if (x >= e1->x && x < e1->x + e1->w
-       && y >= e1->y && y < e1->y + e1->h)
+       && y >= e1->y && y < e1->y + e1->h
+       && e1->type == 1)
       {
          return true;
       }
